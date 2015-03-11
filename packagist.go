@@ -122,7 +122,8 @@ func (p *Client) MakeURI(path string, paramMap map[string]string) string {
 	return uri.String()
 }
 
-//NewAPIClient creates a new Packagist API client instance
-func NewAPIClient() Client {
-	return Client{host: "https://packagist.org", httpClient: &http.Client{}}
+//NewAPIClient creates a new Packagist API client
+func NewAPIClient() *Client {
+	client := Client{host: "https://packagist.org", httpClient: &http.Client{}}
+	return &client
 }

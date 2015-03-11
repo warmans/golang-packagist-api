@@ -1,75 +1,75 @@
 package packagist
 
 import (
-    "fmt"
-    "net/http"
-    "net/http/httptest"
-    "testing"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-    "github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/suite"
 )
 
 type PackagistTestSuite struct {
-    suite.Suite
-    packagist Client
+	suite.Suite
+	packagist *Client
 }
 
 func (suite *PackagistTestSuite) SetupTest() {
-    suite.packagist = NewAPIClient()
+	suite.packagist = NewAPIClient()
 }
 
 func (suite *PackagistTestSuite) TestMakeUriCreatesValidURIs() {
 
-    //uri without querystring
-    suite.Equal(suite.packagist.MakeURI("/packages", make(map[string]string)), "https://packagist.org/packages")
+	//uri without querystring
+	suite.Equal(suite.packagist.MakeURI("/packages", make(map[string]string)), "https://packagist.org/packages")
 
-    //uri with querystring
-    suite.Equal(suite.packagist.MakeURI("/packages", map[string]string{"foo": "bar"}), "https://packagist.org/packages?foo=bar")
+	//uri with querystring
+	suite.Equal(suite.packagist.MakeURI("/packages", map[string]string{"foo": "bar"}), "https://packagist.org/packages?foo=bar")
 }
 
 func (suite *PackagistTestSuite) TestListPackages() {
 
-    //setup server
-    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintln(w, "{\"packageNames\":[\"vendor1/package1\",\"vendor2/package2\"]}")
-    }))
-    defer ts.Close()
+	//setup server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "{\"packageNames\":[\"vendor1/package1\",\"vendor2/package2\"]}")
+	}))
+	defer ts.Close()
 
-    //force client to use server
-    suite.packagist.host = ts.URL
+	//force client to use server
+	suite.packagist.host = ts.URL
 
-    res, _ := suite.packagist.ListPackages(make(map[string]string))
+	res, _ := suite.packagist.ListPackages(make(map[string]string))
 
-    //check for expected contents
-    suite.Equal(res.PackageNames[0], "vendor1/package1")
-    suite.Equal(res.PackageNames[1], "vendor2/package2")
+	//check for expected contents
+	suite.Equal(res.PackageNames[0], "vendor1/package1")
+	suite.Equal(res.PackageNames[1], "vendor2/package2")
 }
 
 func (suite *PackagistTestSuite) TestListPackagesDecodeFailure() {
 
-    //setup server
-    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintln(w, "{\"packageNames\":[\"vendor1/package1\",\"vendor2/package2\"")
-    }))
-    defer ts.Close()
+	//setup server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "{\"packageNames\":[\"vendor1/package1\",\"vendor2/package2\"")
+	}))
+	defer ts.Close()
 
-    //force client to use server
-    suite.packagist.host = ts.URL
+	//force client to use server
+	suite.packagist.host = ts.URL
 
-    res, err := suite.packagist.ListPackages(make(map[string]string))
+	res, err := suite.packagist.ListPackages(make(map[string]string))
 
-    //empty package list result
-    suite.Equal(res, PackageListResult{})
+	//empty package list result
+	suite.Equal(res, PackageListResult{})
 
-    //check for error
-    suite.Equal(err.Error(), "unexpected EOF")
+	//check for error
+	suite.Equal(err.Error(), "unexpected EOF")
 }
 
 func (suite *PackagistTestSuite) TestGetPackage() {
 
-    //setup server
-    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintln(w, `{
+	//setup server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `{
             "package": {
                 "name": "warmans/dlock",
                 "description": "Distributed locking library",
@@ -132,20 +132,20 @@ func (suite *PackagistTestSuite) TestGetPackage() {
                 }
             }
         `)
-    }))
-    defer ts.Close()
+	}))
+	defer ts.Close()
 
-    //force client to use server
-    suite.packagist.host = ts.URL
+	//force client to use server
+	suite.packagist.host = ts.URL
 
-    res, err := suite.packagist.GetPackage("vendor1/package1")
+	res, err := suite.packagist.GetPackage("vendor1/package1")
 
-    suite.Equal(err, nil)                                                 //no error
-    suite.Equal(res.Package.Name, "warmans/dlock")                        //name looks okay
-    suite.Equal(res.Package.Versions["dev-master"].Name, "warmans/dlock") //version name looks okay
+	suite.Equal(err, nil)                                                 //no error
+	suite.Equal(res.Package.Name, "warmans/dlock")                        //name looks okay
+	suite.Equal(res.Package.Versions["dev-master"].Name, "warmans/dlock") //version name looks okay
 
 }
 
 func TestPackagist(t *testing.T) {
-    suite.Run(t, new(PackagistTestSuite))
+	suite.Run(t, new(PackagistTestSuite))
 }
