@@ -26,7 +26,7 @@ type Package struct {
 	Versions    map[string]Version  `json:"versions"`
 	Type        string              `json:"type"`
 	Repository  string              `json:"repository"`
-	Download    map[string]int      `json:"download"`
+	Downloads   map[string]int      `json:"downloads"`
 	Favers      int                 `json:"favers"`
 }
 
